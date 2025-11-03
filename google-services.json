@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "258509712799",
+    "project_id": "publiceye-904be",
+    "storage_bucket": "publiceye-904be.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:258509712799:android:24213124946f90fac9e1aa",
+        "android_client_info": {
+          "package_name": "com.vishnu.publiceye"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyDFAWEI9bGA5ge2WgGNjcgbhfvOXN5G4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
