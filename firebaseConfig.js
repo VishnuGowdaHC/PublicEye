@@ -8,7 +8,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyCyDFAWEI9bGA5ge2WgGNjcgbhfvOXN5G4",
   authDomain: "publiceye-904be.firebaseapp.com",
   projectId: "publiceye-904be",
-  storageBucket: "publiceye-904be.appspot.com",
+  storageBucket: "publiceye-904be.firebasestorage.app",
   appId: "1:258509712799:android:24213124946f90fac9e1aa",
 };
 

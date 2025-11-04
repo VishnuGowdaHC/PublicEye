@@ -95,6 +95,7 @@ function AppNavigator() {
             <Stack.Screen name="CreateProfile" component={CreateProfile} />
           </>
         )}
+        
       </Stack.Navigator>
     </NavigationContainer>
   );
