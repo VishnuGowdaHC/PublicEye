@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, Image, ActivityIndicator } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { getAuth } from "firebase/auth";
+import { getAuth, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
+import { TouchableOpacity } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 export default function ProfileScreen() {
   const auth = getAuth();
   const user = auth.currentUser;
+  const navigation = useNavigation();
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -117,6 +120,27 @@ export default function ProfileScreen() {
             </Text>
           </View>
         </View>
+        {/* Logout Button */}
+            <TouchableOpacity
+            onPress={async () => {
+                try {
+                const auth = getAuth();
+                await signOut(auth);
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: "Login" }],
+                });
+                } catch (error) {
+                console.error("Logout error:", error);
+                }
+            }}
+            className="bg-red-600 py-5 rounded-full mb-10"
+            activeOpacity={0.8}
+            >
+            <Text className="text-white text-center text-lg font-semibold">
+                Logout
+            </Text>
+            </TouchableOpacity>
       </ScrollView>
     </View>
   );
