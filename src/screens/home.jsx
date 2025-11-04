@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
-import {ReportForm} from '../../tools/components/ReportForm';
+
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -42,7 +42,7 @@ export default function HomeScreen() {
     };
 
     fetchReports();
-  }, [ReportForm]);
+  }, []);
 
   return (
     <SafeAreaView className="flex-1 bg-gray-900" edges={['top']}>
@@ -53,7 +53,7 @@ export default function HomeScreen() {
         </View>
         <Ionicons name="notifications-outline" size={28} color="white" />
       </View>
-
+      <Text className="text-gray-400 text-sm m-4 text-center mt-2">The server will update the reports every 20 mins</Text>
       {/* Loader */}
       {loading ? (
         <View className="flex-1 justify-center items-center">
@@ -101,6 +101,7 @@ export default function HomeScreen() {
         <Ionicons name="add" size={24} color="white" />
         <Text className="text-white font-bold ml-2 text-base">Report Issue</Text>
       </Pressable>
+      
     </SafeAreaView>
   );
 }

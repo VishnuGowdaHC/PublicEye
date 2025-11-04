@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { TextInput, Text, View, Pressable, ActivityIndicator, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { TextInput, Text, View, Pressable, ActivityIndicator, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseAuth } from '../../firebaseConfig';
 import { useNavigation } from '@react-navigation/native';
+
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -30,6 +31,7 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-900">
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
@@ -37,9 +39,9 @@ export default function LoginScreen() {
 
         <View className="flex-row items-center justify-between px-6 py-4">
           <Text className="text-white text-2xl font-bold">PublicEye</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+          {/* <TouchableOpacity onPress={() => navigation.navigate('Register')}>
             <Text className="text-blue-500 text-base font-semibold">Sign up</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         <View className="flex-1 justify-center px-6">
@@ -96,6 +98,7 @@ export default function LoginScreen() {
           ) : null}
         </View>
       </KeyboardAvoidingView>
+      </ScrollView>
     </SafeAreaView>
   );
 }

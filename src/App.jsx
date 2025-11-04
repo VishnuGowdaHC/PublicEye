@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -12,23 +12,31 @@ import { AuthProvider, useAuth } from "../tools/contexts/auth";
 import { View, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ReportForm from "../tools/components/ReportForm";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { onAuthStateChanged } from "firebase/auth";
+import { getDoc, doc } from "firebase/firestore";
+import { firebaseAuth, db } from "../firebaseConfig"; // Add your path
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function MainTabs() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: '#3B82F6', 
-        tabBarInactiveTintColor: '#9CA3AF', // gray-400
+        tabBarInactiveTintColor: '#9CA3AF',
         tabBarStyle: {
-          backgroundColor: '#1F2937', // gray-800
-          borderTopColor: '#374151', // gray-700
-          paddingBottom: 8,
+          backgroundColor: '#1F2937',
+          borderTopColor: '#374151',
+          paddingBottom: insets.bottom > 0 ? insets.bottom / 2 : 10,
           paddingTop: 8,
-          height: 60,
+          height: 65 + insets.bottom,
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -69,12 +77,31 @@ function MainTabs() {
 }
 
 function AppNavigator() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
+  const [hasProfile, setHasProfile] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkProfile = async () => {
+      if (user) {
+        try {
+          const profileDoc = await getDoc(doc(db, 'users', user.uid));
+          setHasProfile(profileDoc.exists());
+        } catch (error) {
+          console.error('Error checking profile:', error);
+          setHasProfile(false);
+        }
+      }
+      setLoading(false);
+    };
+
+    checkProfile();
+  }, [user]);
 
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center bg-white">
-        <ActivityIndicator size="large" color="#000" />
+      <View className="flex-1 justify-center items-center bg-slate-900">
+        <ActivityIndicator size="large" color="#3B82F6" />
       </View>
     );
   }
@@ -83,19 +110,20 @@ function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          <>
+          hasProfile ? (
+            <>
               <Stack.Screen name="Main" component={MainTabs} />
               <Stack.Screen name="ReportForm" component={ReportForm} />
-          </>
+            </>
           ) : (
+            <Stack.Screen name="CreateProfile" component={CreateProfile} />
+          )
+        ) : (
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
-            
-            <Stack.Screen name="CreateProfile" component={CreateProfile} />
           </>
         )}
-        
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -103,8 +131,12 @@ function AppNavigator() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppNavigator />
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <AppNavigator />
+        </AuthProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

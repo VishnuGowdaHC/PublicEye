@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseAuth } from '../../firebaseConfig';
 import { useNavigation } from '@react-navigation/native';
+import { ScrollView } from 'react-native-gesture-handler';
 
 
 export default function RegisterScreen() {
@@ -27,18 +28,20 @@ export default function RegisterScreen() {
     
     try {
       await createUserWithEmailAndPassword(firebaseAuth, email, password);
+      navigation.replace('CreateProfile')
       console.log('Registration successful');
     } catch (err) {
       console.error('Registration error:', err.code, err.message);
       setError(err.message);
     } finally {
       setLoading(false);
-      navigation.navigate('CreateProfile')
+      
     }
   };
 
   return (
     <SafeAreaView className="flex-1 bg-gray-900">
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
@@ -123,6 +126,7 @@ export default function RegisterScreen() {
           ) : null}
         </View>
       </KeyboardAvoidingView>
+      </ScrollView>
     </SafeAreaView>
   );
 }

@@ -1,107 +1,123 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import React, { useEffect, useState } from "react";
+import { View, Text, ScrollView, Image, ActivityIndicator } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { getAuth } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../firebaseConfig";
 
 export default function ProfileScreen() {
-  const [fullName, setFullName] = useState('Rohan Sharma');
-  const [age, setAge] = useState('28');
-  const [address, setAddress] = useState('45, 1st Main, Koramangala, Bangalore');
-  const [phoneNumber, setPhoneNumber] = useState('(+91) 98765 43210');
+  const auth = getAuth();
+  const user = auth.currentUser;
 
-  const handleSaveChanges = () => {
-    console.log('Saving changes...');
-    // Add your save logic here
-  };
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        if (!user) return;
+        const docRef = doc(db, "users", user.uid);
+        const snap = await getDoc(docRef);
+
+        if (snap.exists()) {
+          setProfile(snap.data());
+        } else {
+          console.warn("No profile found for this user");
+        }
+      } catch (err) {
+        console.error("Error loading profile:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
+
+  if (loading) {
+    return (
+      <View className="flex-1 bg-slate-900 justify-center items-center">
+        <ActivityIndicator size="large" color="#3B82F6" />
+        <Text className="text-gray-400 mt-3">Loading profile...</Text>
+      </View>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <View className="flex-1 bg-slate-900 justify-center items-center">
+        <Feather name="alert-circle" size={48} color="#9CA3AF" />
+        <Text className="text-gray-400 mt-3">No profile information found.</Text>
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-slate-900">
       {/* Header */}
-      <View className="flex-row items-center px-4 pt-12 pb-6">
-        <TouchableOpacity className="mr-4">
-          <Feather name="chevron-left" size={28} color="white" />
-        </TouchableOpacity>
-        <Text className="flex-1 text-white text-2xl font-semibold text-center mr-10">
-          Profile
-        </Text>
+      <View className="flex-row items-center justify-center px-4 pt-12 pb-6 bg-slate-900">
+        <Text className="text-white text-2xl font-semibold text-center">Profile</Text>
       </View>
 
       <ScrollView className="flex-1 px-6">
         {/* Profile Image */}
         <View className="items-center mb-6">
-          <View className="relative">
+          {profile.profilePic ? (
+            <Image
+              source={{ uri: profile.profilePic }}
+              className="w-52 h-52 rounded-full bg-gray-200"
+            />
+          ) : (
             <View className="w-52 h-52 rounded-full bg-gray-200 items-center justify-center">
-              <Feather name="image" size={60} color="#d1d5db" />
+              <Feather name="user" size={80} color="#9ca3af" />
             </View>
-            <TouchableOpacity className="absolute bottom-2 right-2 bg-blue-600 w-12 h-12 rounded-full items-center justify-center">
-              <Feather name="copy" size={20} color="white" />
-            </TouchableOpacity>
-          </View>
+          )}
           <Text className="text-white text-2xl font-semibold mt-6">
-            {fullName}
+            {profile.name || "Unnamed User"}
           </Text>
-          <Text className="text-gray-400 text-base mt-1">
-            rohan.sharma@example.com
-          </Text>
+          <Text className="text-gray-400 text-base mt-1">{user?.email}</Text>
         </View>
 
-        {/* Full Name Input */}
-        <View className="mb-5">
-          <Text className="text-gray-400 text-sm mb-2">Full Name</Text>
-          <TextInput
-            value={fullName}
-            onChangeText={setFullName}
-            className="bg-slate-800 text-white text-base px-5 py-4 rounded-xl border border-slate-700"
-            placeholderTextColor="#9ca3af"
-          />
-        </View>
+        {/* Info Section */}
+        <View className="bg-slate-800 rounded-2xl p-5 mb-8 border border-slate-700">
+          <View className="mb-4">
+            <Text className="text-gray-400 text-sm mb-1">Full Name</Text>
+            <Text className="text-white text-lg font-medium">
+              {profile.name || "N/A"}
+            </Text>
+          </View>
 
-        {/* Age Input */}
-        <View className="mb-5">
-          <Text className="text-gray-400 text-sm mb-2">Age</Text>
-          <TextInput
-            value={age}
-            onChangeText={setAge}
-            keyboardType="numeric"
-            className="bg-slate-800 text-white text-base px-5 py-4 rounded-xl border border-slate-700"
-            placeholderTextColor="#9ca3af"
-          />
-        </View>
+          <View className="mb-4">
+            <Text className="text-gray-400 text-sm mb-1">Phone Number</Text>
+            <Text className="text-white text-lg font-medium">
+              {profile.phone || "N/A"}
+            </Text>
+          </View>
 
-        {/* Address Input */}
-        <View className="mb-5">
-          <Text className="text-gray-400 text-sm mb-2">Address</Text>
-          <TextInput
-            value={address}
-            onChangeText={setAddress}
-            className="bg-slate-800 text-white text-base px-5 py-4 rounded-xl border border-slate-700"
-            placeholderTextColor="#9ca3af"
-          />
-        </View>
+          <View className="mb-4">
+            <Text className="text-gray-400 text-sm mb-1">Address</Text>
+            <Text className="text-white text-lg font-medium">
+              {profile.address || "N/A"}
+            </Text>
+          </View>
 
-        {/* Phone Number Input */}
-        <View className="mb-6">
-          <Text className="text-gray-400 text-sm mb-2">Phone Number</Text>
-          <TextInput
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-            keyboardType="phone-pad"
-            className="bg-slate-800 text-white text-base px-5 py-4 rounded-xl border border-slate-700"
-            placeholderTextColor="#9ca3af"
-          />
-        </View>
+          {profile.age ? (
+            <View className="mb-4">
+              <Text className="text-gray-400 text-sm mb-1">Age</Text>
+              <Text className="text-white text-lg font-medium">{profile.age}</Text>
+            </View>
+          ) : null}
 
-        {/* Save Button */}
-        <TouchableOpacity
-          onPress={handleSaveChanges}
-          className="bg-blue-600 py-5 rounded-full mb-8"
-          activeOpacity={0.8}
-        >
-          <Text className="text-white text-center text-lg font-semibold">
-            Save Changes
-          </Text>
-        </TouchableOpacity>
+          <View className="mb-2">
+            <Text className="text-gray-400 text-sm mb-1">Last Updated</Text>
+            <Text className="text-white text-lg font-medium">
+              {profile.updatedAt
+                ? new Date(profile.updatedAt.seconds * 1000).toLocaleString()
+                : "N/A"}
+            </Text>
+          </View>
+        </View>
       </ScrollView>
-
     </View>
   );
 }
