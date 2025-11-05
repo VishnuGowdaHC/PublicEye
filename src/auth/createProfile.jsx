@@ -85,8 +85,12 @@ export default function CreateProfile() {
                 { merge: true }
             );
 
-        Alert.alert("Success", "Profile updated successfully!");
-        navigation.replace('Main');
+            Alert.alert("Success", "Profile updated successfully!")
+            setTimeout(() => {
+                navigation.replace("Main");
+            }, 500);
+
+        
         } catch (error) {
             console.log(error);
             Alert.alert("Error", error.message);

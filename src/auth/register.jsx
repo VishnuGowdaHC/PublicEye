@@ -28,7 +28,7 @@ export default function RegisterScreen() {
     
     try {
       await createUserWithEmailAndPassword(firebaseAuth, email, password);
-      navigation.replace('CreateProfile')
+      
       console.log('Registration successful');
     } catch (err) {
       console.error('Registration error:', err.code, err.message);

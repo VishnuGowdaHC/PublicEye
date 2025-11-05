@@ -90,7 +90,7 @@ export default function ReportForm({ navigation, route }) {
     setLocationLoading(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      
+
       if (status !== 'granted') {
         Alert.alert('Permission Denied', 'We need location permissions to add location to your report.');
         setLocationLoading(false);
@@ -103,7 +103,7 @@ export default function ReportForm({ navigation, route }) {
 
       const { latitude, longitude } = currentLocation.coords;
 
-      // Reverse geocode to get address
+      // Reverse geocode to get address + area
       const reverseGeocode = await Location.reverseGeocodeAsync({
         latitude,
         longitude,
@@ -112,13 +112,25 @@ export default function ReportForm({ navigation, route }) {
       if (reverseGeocode.length > 0) {
         const loc = reverseGeocode[0];
         const fullAddress = `${loc.street || ''}, ${loc.city || ''}, ${loc.region || ''}, ${loc.country || ''}`.replace(/^,\s*/, '');
-        setAddress(fullAddress);
-      }
+        const areaName = loc.subLocality || loc.district || loc.city || 'Unknown Area';
 
-      setLocation({
-        lat: latitude,
-        lng: longitude,
-      });
+        // Save both address and area
+        setAddress(fullAddress);
+        setLocation({
+          lat: latitude,
+          lng: longitude,
+          address: fullAddress,
+          area: areaName, // 🆕 Added field
+        });
+      } else {
+        // fallback if reverse geocode fails
+        setLocation({
+          lat: latitude,
+          lng: longitude,
+          address: 'Location added',
+          area: 'Unknown Area',
+        });
+      }
 
       Alert.alert('Success', 'Location added successfully!');
     } catch (error) {
@@ -146,8 +158,8 @@ export default function ReportForm({ navigation, route }) {
   // Submit report
   const handleSubmit = async () => {
     if (!userId) {
-        Alert.alert('Error', 'User not authenticated. Please log in again.');
-        return;
+      Alert.alert('Error', 'User not authenticated. Please log in again.');
+      return;
     }
 
     if (!category) {
@@ -189,31 +201,26 @@ export default function ReportForm({ navigation, route }) {
         location: {
           lat: location.lat,
           lng: location.lng,
-          address: address || 'Location added',
+          address: location.address || 'Location added',
+          area: location.area || 'Unknown Area', // 🆕 Included here
         },
         status: "pending",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
 
-      Alert.alert(
-        'Success',
-        'Your report has been submitted successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              // Reset form
-              setImageUri(null);
-              setDescription('');
-              setLocation(null);
-              setAddress('');
-              // Navigate back or to reports list
-              navigation?.goBack();
-            },
+      Alert.alert('Success', 'Your report has been submitted successfully!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            setImageUri(null);
+            setDescription('');
+            setLocation(null);
+            setAddress('');
+            navigation?.goBack();
           },
-        ]
-      );
+        },
+      ]);
     } catch (error) {
       console.error('Error submitting report:', error);
       Alert.alert('Error', 'Failed to submit report. Please try again.');

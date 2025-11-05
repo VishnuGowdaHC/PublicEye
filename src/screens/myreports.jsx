@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { db, firebaseAuth } from "../../firebaseConfig";
+import { onSnapshot } from "firebase/firestore";
 
 export default function MyReportsScreen({ navigation }) {
   const [reports, setReports] = useState([]);
@@ -25,27 +26,39 @@ export default function MyReportsScreen({ navigation }) {
   };
 
   useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        if (!user) return;
-        setLoading(true);
-        const q = query(
-          collection(db, "reports"),
-          where("userId", "==", user.uid),
-          orderBy("createdAt", "desc")
-        );
-        const snapshot = await getDocs(q);
-        const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        setReports(data);
-      } catch (error) {
-        console.error("Error fetching reports:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  if (!user) return;
 
-    fetchReports();
-  }, [user]);
+  // Start loading when the listener sets up
+  setLoading(true);
+
+  // Define query: only user's reports, ordered by createdAt (newest first)
+  const q = query(
+    collection(db, "reports"),
+    where("userId", "==", user.uid),
+    orderBy("createdAt", "desc")
+  );
+
+  // Set up real-time listener
+  const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+      const fetchedReports = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setReports(fetchedReports);
+      setLoading(false);
+    },
+    (error) => {
+      console.error("Error listening to reports:", error);
+      setLoading(false);
+    }
+  );
+
+  // Cleanup listener on unmount
+  return () => unsubscribe();
+}, [user]);
+
 
   return (
     <SafeAreaView className="flex-1 bg-gray-900" edges={["top"]}>

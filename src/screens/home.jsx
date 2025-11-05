@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
+import { onSnapshot } from 'firebase/firestore';
 
 
 export default function HomeScreen() {
@@ -27,21 +28,31 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        setLoading(true);
-        const q = query(collection(db, 'reports'), orderBy('createdAt', 'desc'), limit(10));
-        const snapshot = await getDocs(q);
-        const fetchedReports = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        setReports(fetchedReports);
-      } catch (error) {
-        console.error('Error fetching reports:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const q = query(
+    collection(db, "reports"),
+    orderBy("createdAt", "desc"),
+    limit(10)
+  );
 
-    fetchReports();
+  // Real-time listener
+  const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+      const fetchedReports = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setReports(fetchedReports);
+      setLoading(false);
+    },
+    (error) => {
+      console.error("Error listening to reports:", error);
+      setLoading(false);
+    }
+  );
+
+  // Cleanup listener when component unmounts
+  return () => unsubscribe();
   }, []);
 
   return (

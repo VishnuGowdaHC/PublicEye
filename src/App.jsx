@@ -15,9 +15,10 @@ import ReportForm from "../tools/components/ReportForm";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { onAuthStateChanged } from "firebase/auth";
 import { getDoc, doc } from "firebase/firestore";
 import { firebaseAuth, db } from "../firebaseConfig"; // Add your path
+import { onSnapshot } from "firebase/firestore";
+
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -82,21 +83,25 @@ function AppNavigator() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkProfile = async () => {
-      if (user) {
-        try {
-          const profileDoc = await getDoc(doc(db, 'users', user.uid));
-          setHasProfile(profileDoc.exists());
-        } catch (error) {
-          console.error('Error checking profile:', error);
-          setHasProfile(false);
-        }
-      }
-      setLoading(false);
-    };
+  if (!user) {
+    setLoading(false);
+    return;
+  }
 
-    checkProfile();
+  // Listen for real-time changes
+  const unsubscribe = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
+    setHasProfile(snapshot.exists());
+    setLoading(false);
+  }, (error) => {
+    console.error('Error checking profile:', error);
+    setHasProfile(false);
+    setLoading(false);
+  });
+
+  // Cleanup on unmount
+  return () => unsubscribe();
   }, [user]);
+
 
   if (loading) {
     return (
@@ -108,24 +113,23 @@ function AppNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {user ? (
-          hasProfile ? (
-            <>
-              <Stack.Screen name="Main" component={MainTabs} />
-              <Stack.Screen name="ReportForm" component={ReportForm} />
-            </>
-          ) : (
-            <Stack.Screen name="CreateProfile" component={CreateProfile} />
-          )
-        ) : (
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-          </>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {!user ? (
+        <>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+        </>
+      ) : (
+        <>
+          <Stack.Screen
+            name="Main"
+            component={hasProfile ? MainTabs : CreateProfile}
+          />
+          <Stack.Screen name="ReportForm" component={ReportForm} />
+        </>
+      )}
+    </Stack.Navigator>
+  </NavigationContainer>
   );
 }
 

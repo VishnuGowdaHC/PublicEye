@@ -1,0 +1,87 @@
+# ==========================================================
+# 🔒 Common Secrets / Environment
+# ==========================================================
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.p12
+*.crt
+*.csr
+serviceAccount.json
+firebase-service-account.json
+
+# ==========================================================
+# 🧱 Node / Backend
+# ==========================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Server build outputs
+server/dist/
+server/build/
+server/logs/
+server/tmp/
+
+# Firebase Admin SDK cache
+firebase-debug.log
+firebase.json
+
+# ==========================================================
+# 📱 Expo / React Native
+# ==========================================================
+# Metro / Expo cache
+.expo/
+.expo-shared/
+dist/
+web-build/
+ios/
+android/
+
+# Expo generated artifacts
+*.apk
+*.aab
+*.ipa
+
+# React Native
+*.iml
+*.hprof
+*.orig
+*.rej
+*.so
+*.tmp
+*.zip
+*.log
+*.keystore
+*.jks
+
+# ==========================================================
+# 🧩 OS & Editor Files
+# ==========================================================
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*.tmp
+*.bak
+*.lock
+*.cache
+
+# ==========================================================
+# 🧠 Misc
+# ==========================================================
+# Local test files
+test/
+tests/
+*.test.js
+*.spec.js
+
+# Uploaded media (optional, if you save locally)
+uploads/
+screenshots/
