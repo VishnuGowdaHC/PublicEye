@@ -1,4 +1,3 @@
-// server/index.js
 require('dotenv').config();
 const express = require('express');
 const cron = require('node-cron');
@@ -9,7 +8,6 @@ app.use(express.json());
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 
-// Manual trigger (protect with token in production)
 app.post('/trigger-summary', async (req, res) => {
   try {
     await runSummaryJob();
@@ -19,7 +17,6 @@ app.post('/trigger-summary', async (req, res) => {
   }
 });
 
-// schedule job if CRON_SCHEDULE present
 const cronSchedule = process.env.CRON_SCHEDULE;
 if (cronSchedule) {
   console.log('Scheduling summary job at', cronSchedule);

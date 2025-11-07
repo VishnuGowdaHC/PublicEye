@@ -5,7 +5,7 @@ const { createPdfBuffer } = require('../lib/pdf');
 const { sendSummaryEmail } = require('../lib/mailer');
 
 
-async function runSummaryJob({ days = Number(process.env.SUMMARY_LOOKBACK_DAYS || 2), periodDesc = 'last 2 days' } = {}) {
+async function runSummaryJob({ days = Number(process.env.SUMMARY_LOOKBACK_DAYS || 2), periodDesc = 'last 7 days' } = {}) {
   console.log(`[summaryJob] start: last ${days} days`);
   const admin = initFirebase();
   try {

@@ -14,7 +14,7 @@ function initFirebase() {
   return admin;
 }
 
-async function fetchReportsWithinDays(days = 2, limit = 200) {
+async function fetchReportsWithinDays(days = 7, limit = 200) {
   const adminApp = initFirebase();
   const db = adminApp.firestore();
   const now = admin.firestore.Timestamp.now();

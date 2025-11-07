@@ -1,7 +1,7 @@
 // server/lib/summarizer.js
 require("dotenv").config();
 
-async function summarizeReports(reports, periodDesc = "last 2 days") {
+async function summarizeReports(reports, periodDesc = "last 7 days") {
   if (!reports || reports.length === 0) {
     return {
       summary: `No reports found in the ${periodDesc}.`,

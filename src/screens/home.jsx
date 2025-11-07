@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Image, Pressable, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { collection, query, orderBy, limit, getDoc, doc, updateDoc, increment } from 'firebase/firestore';
-import { db } from '../../firebaseConfig';
-import { onSnapshot } from 'firebase/firestore';
-import { firebaseAuth } from '../../firebaseConfig';
+import { collection, doc, limit, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { db, firebaseAuth } from '../../firebaseConfig';
 
 
 export default function HomeScreen() {
@@ -63,47 +61,64 @@ export default function HomeScreen() {
     setExpandedId(expandedId === id ? null : id);
   };
 
-  const handleFlag = async (id) => {
-    const user = firebaseAuth.currentUser;
-    if (!user) {
-      alert("Please log in to flag reports.");
+
+const handleFlag = async (report) => {
+  const user = firebaseAuth.currentUser;
+  if (!user) {
+    alert("Please log in to flag reports.");
+    return;
+  }
+
+  try {
+    setFlagging(true);
+
+    if (!report || !report.id) {
+      console.warn("Invalid report passed to handleFlag:", report);
       return;
     }
 
-    try {
-      setFlagging(true);
+    // Safe get map
+    const currentFlagsMap =
+      report.flagsMap && typeof report.flagsMap === "object"
+        ? report.flagsMap
+        : {};
 
-      const reportRef = doc(db, "reports", id);
-      const reportSnap = await getDoc(reportRef);
-      if (!reportSnap.exists()) return;
+    const alreadyFlagged = currentFlagsMap[user.uid] === true;
+    const updatedFlagsMap = {
+      ...currentFlagsMap,
+      [user.uid]: !alreadyFlagged,
+    };
+    const newFlagCount = Object.values(updatedFlagsMap).filter(Boolean).length;
 
-      const data = reportSnap.data();
-      const flagsMap = data.flagsMap || {};
+    // 🔹 Update Firestore
+    const reportRef = doc(db, "reports", report.id);
+    await updateDoc(reportRef, {
+      flagsMap: updatedFlagsMap,
+      flags: newFlagCount,
+    });
 
-      // Check if user already flagged
-      const alreadyFlagged = !!flagsMap[user.uid];
+    // 🔹 Instant local update
+    setReports((prevReports) =>
+      prevReports.map((r) =>
+        r.id === report.id
+          ? { ...r, flagsMap: updatedFlagsMap, flags: newFlagCount }
+          : r
+      )
+    );
 
-      // Toggle
-      const newFlagsMap = { ...flagsMap, [user.uid]: !alreadyFlagged };
-
-      // Recount total flags
-      const flagCount = Object.values(newFlagsMap).filter(Boolean).length;
-
-      // Update Firestore
-      await updateDoc(reportRef, {
-        flagsMap: newFlagsMap,
-        flags: flagCount,
-      });
-
-      } catch (error) {
-        console.error("Error toggling flag:", error);
-      } finally {
-        setFlagging(false);
+    } catch (error) {
+      console.error("Error toggling flag:", error);
+      console.error("Error toggling flag:", error.code, error.message);
+    } finally {
+      setFlagging(false);
     }
   };
 
+
+
   return (
     <SafeAreaView className="flex-1 bg-gray-900" edges={['top']}>
+    
       
       <View className="flex-row items-center justify-between px-4 py-4 bg-gray-800">
         <View className="flex-row items-center">
@@ -158,14 +173,18 @@ export default function HomeScreen() {
               </Text>
 
               <Pressable
-                onPress={() => handleFlag(report.id)}
+                onPress={() => handleFlag(report)}
                 disabled={flagging}
                 className="flex-row items-center"
               >
                 <Ionicons
-                  name="flag-outline"
+                  name={
+                    report.flagsMap?.[firebaseAuth.currentUser?.uid]
+                      ? "flag"
+                      : "flag-outline"
+                  }
                   size={18}
-                  color={flagging ? "#aaa" : "#3B82F6"}
+                  color={report.flagsMap?.[firebaseAuth.currentUser?.uid] ? "#aaa" : "#3B82F6"}
                 />
                 <Text className="text-gray-300 text-sm ml-1">
                   {report.flags || 0}
