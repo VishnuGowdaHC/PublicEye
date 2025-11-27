@@ -1,22 +1,21 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  ScrollView, 
-  Image, 
-  Alert,
-  ActivityIndicator 
-} from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import {db, storage, firebaseAuth} from '../../firebaseConfig';
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { useNavigation } from '@react-navigation/native';
-
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import React, { useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { db, firebaseAuth, storage } from '../../firebaseConfig';
+import LottieView from "lottie-react-native";
 
 export default function ReportForm({ navigation, route }) {
   const [imageUri, setImageUri] = useState(null);
@@ -82,6 +81,7 @@ export default function ReportForm({ navigation, route }) {
 
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);
+      console.log(result);
     }
   };
 
@@ -230,7 +230,7 @@ export default function ReportForm({ navigation, route }) {
   };
 
   return (
-    <View className="flex-1 bg-slate-900">
+    <View className="flex-1 bg-slate-900 ">
       {/* Header */}
       <View className="flex-row items-center px-4 pt-12 pb-6">
         <TouchableOpacity onPress={() => {
@@ -247,9 +247,11 @@ export default function ReportForm({ navigation, route }) {
         </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6">
+      <ScrollView className=" px-6"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 60 }}>
         {/* Image Upload Section */}
-        <View className="mb-6">
+        <View className="mb-6 mt-2">
           <Text className="text-gray-400 text-sm mb-3">Report Photo </Text>
           <TouchableOpacity
             onPress={showImageOptions}
@@ -257,15 +259,22 @@ export default function ReportForm({ navigation, route }) {
             activeOpacity={0.7}
           >
             {imageUri ? (
-              <View className="relative">
+              <View className="relative w-full" style={{ aspectRatio: 4 / 3 }}>
+               
                 <Image
                   source={{ uri: imageUri }}
-                  className="w-full h-64"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    borderWidth: 2,
+                    borderRadius: 12,
+                  }}
                   resizeMode="cover"
                 />
+
                 <TouchableOpacity
                   onPress={() => setImageUri(null)}
-                  className="absolute top-3 right-3 bg-red-600 w-10 h-10 rounded-full items-center justify-center"
+                  className="absolute top-3 right-3 border-slate-700 w-10 h-10 rounded-full items-center justify-center"
                 >
                   <Feather name="x" size={20} color="white" />
                 </TouchableOpacity>
@@ -275,7 +284,7 @@ export default function ReportForm({ navigation, route }) {
                 <View className="bg-slate-700 w-16 h-16 rounded-full items-center justify-center mr-4 mt-3 mb-3">
                   <Feather name="camera" size={28} color="#94a3b8" />
                 </View>
-                <Text className="text-gray-400 text-base font-semibold">Tap to add photo</Text>
+                <Text className="text-gray-400 text-base font-semibold ml-4">Tap to add photo</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -339,7 +348,7 @@ export default function ReportForm({ navigation, route }) {
 
         {/* Location Section */}
         <View className="mb-6">
-          <Text className="text-gray-400 text-sm mb-3">Location *</Text>
+          <Text className="text-gray-400 text-sm mb-3">Location</Text>
           
           {location ? (
             <View className="bg-slate-800 rounded-xl border border-slate-700 p-4">
@@ -350,10 +359,17 @@ export default function ReportForm({ navigation, route }) {
                     Location Added
                   </Text>
                   {address ? (
-                    <Text className="text-gray-400 text-sm">{address}</Text>
+                    <>
+                    <Text className="text-gray-400 text-sm">
+                      {address + " "}
+                    </Text>
+                    <Text className="text-gray-400 text-sm">
+                        Lat: {location.lat.toFixed(6)}, Lng: {location.lng.toFixed(6)} 
+                    </Text>
+                    </>
                   ) : (
                     <Text className="text-gray-400 text-sm">
-                      Lat: {location.lat.toFixed(6)}, Lng: {location.lng.toFixed(6)}
+                      
                     </Text>
                   )}
                 </View>
@@ -363,7 +379,7 @@ export default function ReportForm({ navigation, route }) {
                 disabled={locationLoading}
                 className="bg-slate-700 py-3 rounded-lg"
               >
-                <Text className="text-blue-400 text-center text-sm font-medium">
+                <Text className="text-gray-400 drop-shadow text-center text-sm font-medium px-4 py-2 ">
                   Update Location
                 </Text>
               </TouchableOpacity>
@@ -377,13 +393,20 @@ export default function ReportForm({ navigation, route }) {
             >
               <View className="flex flex-row items-center justify-center">
                 {locationLoading ? (
-                  <ActivityIndicator size="large" color="#3b82f6" />
+                  <View className="items-center justify-center object-cover ">
+                    <LottieView
+                            source={require("../../assets/loading.json")}
+                            autoPlay
+                            loop
+                            style={{ width: 50, height: 50 }}
+                    />
+                  </View>
                 ) : (
                   <>
                     <View className="bg-slate-700 w-16 h-16 rounded-full items-center justify-center mt-3 mr-4 mb-3">
                       <Feather name="map-pin" size={28} color="#94a3b8" />
                     </View>
-                    <Text className="text-gray-400 text-base font-semibold">Tap to add location</Text>
+                    <Text className="text-gray-400 text-base font-semibold ml-4">Tap to add location</Text>
                   </>
                 )}
               </View>
@@ -395,11 +418,18 @@ export default function ReportForm({ navigation, route }) {
         <TouchableOpacity
           onPress={handleSubmit}
           disabled={loading}
-          className={`py-5 rounded-xl mb-8 ${loading ? 'bg-slate-700' : 'bg-blue-600'}`}
+          className={`py-4 rounded-xl mb-8 ${loading ? 'bg-gray-700' : 'bg-blue-600'}`}
           activeOpacity={0.8}
         >
           {loading ? (
-            <ActivityIndicator size="small" color="white" />
+            <View className="items-center justify-center object-cover ">
+              <LottieView
+                      source={require("../../assets/loading.json")}
+                      autoPlay
+                      loop
+                      style={{ width: 50, height: 50 }}
+              />
+            </View>
           ) : (
             <Text className="text-white text-center text-lg font-semibold">
               Submit Report

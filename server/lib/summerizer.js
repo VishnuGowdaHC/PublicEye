@@ -1,4 +1,5 @@
-// server/lib/summarizer.js
+const Groq = require("groq-sdk");
+const { postToTwitter } = require("../jobs/socialMedia");
 require("dotenv").config();
 
 async function summarizeReports(reports, periodDesc = "last 7 days") {
@@ -9,55 +10,84 @@ async function summarizeReports(reports, periodDesc = "last 7 days") {
     };
   }
 
-  // Build a trimmed input for the model
   const text = reports
+    .sort((a, b) => (b.flags || 0) - (a.flags || 0))
     .map((r, i) => {
       const desc = (r.description || "").replace(/\n/g, " ");
       const category = r.category || "General Issue";
       const status = r.status || "Pending";
       const location = r.location?.address || "";
-      return `${i + 1}. [${category}] ${desc} (${status}) ${location}`;
+      const flags = r.flags || 0;
+      return `${i + 1}. [${category}] ${desc} (${status}) ${location} (Flags: ${flags})`;
     })
     .join("\n")
-    .slice(0, 10000);
+    .slice(0, 4000); 
 
-  const hfModel = process.env.SUMMARY_MODEL || "facebook/bart-large-cnn";
+    const prompt = `
+    Summarize the following civic issue reports into this EXACT format.
 
-  let summaryText = "Summary generation failed.";
-  try {
-    const response = await fetch(
-      `https://router.huggingface.co/hf-inference/models/${hfModel}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.HF_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          inputs: text,
-          parameters: {
-            max_length: 700,
-            min_length: 150,
-            do_sample: false,
-          },
-        }),
-      }
-    );
+    1. Total Issues:
+    2. Issues by Category:
+    3. Top Flagged Issues:
+    4. Resolved Issues:
+    5. High Priority Areas:
+    6. Short Summary:
 
-    if (!response.ok) {
-      const err = await response.text();
-      console.error("HuggingFace API error:", err);
-    } else {
-      const data = await response.json();
-      summaryText =
-        data?.[0]?.summary_text ||
-        "Summary generation failed. Please try again later.";
-    }
-  } catch (error) {
-    console.error("Summarizer error:", error);
-  }
+    Rules:
+    - Use - points.
+    - Count accurately.
+    - Do NOT invent anything.
+    - Only use the data provided.
+    - If something doesn’t exist, say "None".
 
-  // Prepare a table-friendly version of the reports
+    Reports:
+    ${text}
+    `;
+
+    const groq = new Groq({
+      apiKey: process.env.GROQ_API,
+    });
+
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.2,
+    });
+    const summaryText = completion.choices[0].message.content.trim();
+
+    const tweetPrompt = `
+    You are generating a public Twitter summary for civic issue reports.
+      Follow this exact format and make sure everything is factual and under 240 characters.
+
+      FORMAT:
+      "We have collected X reports this week. The top issues were <issue1> and <issue2> .... <issueN>. <three-line closing statement>."
+
+      Rules:
+      - X = total number of reports
+      - issue1 and issue2 must be the top 2-5 categories OR top 2-5 most-flagged issues (choose whichever is stronger)
+      - Closing line must be 1-3 sentences, concise (e.g., "Authorities have been notified.", "High-priority areas will be reviewed.", etc.)
+      - Do NOT add extra details.
+      - Do NOT add bullet points.
+      - Do NOT exceed 240 characters.
+
+      Reports:
+      ${text}
+
+    `;
+
+    const tweetResponse = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      messages: [{ role: "user", content: tweetPrompt }],
+      temperature: 0.2,
+    });
+
+    let tweetText = tweetResponse.choices[0].message.content.trim();
+
+    // Safety cutoff
+    tweetText = tweetText.slice(0, 240);
+
+    await postToTwitter({ summary: tweetText });
+  
   const tableData = reports.slice(0, 10).map((r, i) => ({
     id: i + 1,
     category: r.category || "General Issue",

@@ -86,9 +86,7 @@ export default function CreateProfile() {
             );
 
             Alert.alert("Success", "Profile updated successfully!")
-            setTimeout(() => {
-                navigation.replace("Main");
-            }, 500);
+           
 
         
         } catch (error) {

@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getDoc, doc } from "firebase/firestore";
 import { firebaseAuth, db } from "../firebaseConfig"; // Add your path
 import { onSnapshot } from "firebase/firestore";
+import  LoadingScreen  from "../tools/components/LoadingScreen"
 
 
 const Stack = createNativeStackNavigator();
@@ -81,28 +82,51 @@ function AppNavigator() {
   const { user } = useAuth();
   const [hasProfile, setHasProfile] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [postLoginDelay, setPostLoginDelay] = useState(false); // <-- NEW
 
+  // Existing Firestore user profile check
   useEffect(() => {
-  if (!user) {
-    setLoading(false);
-    return;
-  }
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
-  // Listen for real-time changes
-  const unsubscribe = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
-    setHasProfile(snapshot.exists());
-    setLoading(false);
-  }, (error) => {
-    console.error('Error checking profile:', error);
-    setHasProfile(false);
-    setLoading(false);
-  });
+    const unsubscribe = onSnapshot(
+      doc(db, 'users', user.uid),
+      (snapshot) => {
+        setHasProfile(snapshot.exists());
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error checking profile:', error);
+        setHasProfile(false);
+        setLoading(false);
+      }
+    );
 
-  // Cleanup on unmount
-  return () => unsubscribe();
+    return () => unsubscribe();
+  }, [user]);
+
+  // 2-second post-login delay
+  useEffect(() => {
+    if (user) {
+      setPostLoginDelay(true);
+      const timer = setTimeout(() => {
+        setPostLoginDelay(false);
+      }, 2000); // 2 seconds
+
+      return () => clearTimeout(timer);
+    } else {
+      setPostLoginDelay(false);
+    }
   }, [user]);
 
 
+  if (user && !loading && postLoginDelay) {
+    return <LoadingScreen />;
+  }
+
+ 
   if (loading) {
     return (
       <View className="flex-1 justify-center items-center bg-slate-900">
@@ -111,25 +135,30 @@ function AppNavigator() {
     );
   }
 
+  // Normal navigation flow
   return (
     <NavigationContainer>
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {!user ? (
-        <>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-        </>
-      ) : (
-        <>
-          <Stack.Screen
-            name="Main"
-            component={hasProfile ? MainTabs : CreateProfile}
-          />
-          <Stack.Screen name="ReportForm" component={ReportForm} />
-        </>
-      )}
-    </Stack.Navigator>
-  </NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {user ? (
+          hasProfile ? (
+            <>
+              <Stack.Screen name="Main" component={MainTabs} />
+              <Stack.Screen name="ReportForm" component={ReportForm} />
+            </>
+          ) : (
+            <>
+              <Stack.Screen name="CreateProfile" component={CreateProfile} />
+              <Stack.Screen name="ProfileLoading" component={LoadingScreen} />
+            </>
+          )
+        ) : (
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+          </>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 

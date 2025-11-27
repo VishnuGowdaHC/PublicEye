@@ -90,7 +90,7 @@ const handleFlag = async (report) => {
     };
     const newFlagCount = Object.values(updatedFlagsMap).filter(Boolean).length;
 
-    // 🔹 Update Firestore
+  
     const reportRef = doc(db, "reports", report.id);
     await updateDoc(reportRef, {
       flagsMap: updatedFlagsMap,
@@ -124,7 +124,6 @@ const handleFlag = async (report) => {
         <View className="flex-row items-center">
           <Text className="text-white text-2xl font-bold ml-2">PublicEye</Text>
         </View>
-        <Ionicons name="notifications-outline" size={28} color="white" />
       </View>
       
       
@@ -159,8 +158,22 @@ const handleFlag = async (report) => {
               {report.category || "No description"}
             </Text>
 
-            <Text className="text-gray-400 text-sm mt-1">
+            {expandedId === report.id && (
+              <Text className="text-gray-400 mt-3 text-sm leading-5">
+                {report.fullDescription ||
+                  report.description ||
+                  "No detailed description available."}
+              </Text>
+            )}
+
+            <Text className="text-gray-500 text-sm mt-1">
               {report.location?.address || "Unknown location"}
+            </Text>
+
+            <Text className="text-gray-500 text-xs">
+              {report.createdAt?.seconds
+                ? new Date(report.createdAt.seconds * 1000).toLocaleDateString()
+                : ""}
             </Text>
 
             <View className="flex-row items-center mt-2 justify-between">
@@ -192,13 +205,7 @@ const handleFlag = async (report) => {
               </Pressable>
             </View>
 
-            {expandedId === report.id && (
-              <Text className="text-gray-400 mt-3 text-sm leading-5">
-                {report.fullDescription ||
-                  report.description ||
-                  "No detailed description available."}
-              </Text>
-            )}
+            
           </View>
         </Pressable>
           ))}

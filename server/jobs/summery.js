@@ -3,6 +3,7 @@ const { fetchReportsWithinDays, initFirebase } = require('../lib/firestore');
 const { summarizeReports } = require('../lib/summerizer');
 const { createPdfBuffer } = require('../lib/pdf');
 const { sendSummaryEmail } = require('../lib/mailer');
+const { postToTwitter } = require('./socialMedia');
 
 
 async function runSummaryJob({ days = Number(process.env.SUMMARY_LOOKBACK_DAYS || 2), periodDesc = 'last 7 days' } = {}) {
@@ -34,7 +35,9 @@ async function runSummaryJob({ days = Number(process.env.SUMMARY_LOOKBACK_DAYS |
     }
 
     // Send email with PDF attached
+    
     await sendSummaryEmail({ subject, body: summaryText, pdfBuffer, filename: `summary-${Date.now()}.pdf` });
+    console.log("Summary Text:", summaryText);
     console.log('[summaryJob] email sent');
     return { ok: true };
   } catch (err) {
