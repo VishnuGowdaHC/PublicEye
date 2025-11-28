@@ -5,7 +5,8 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { db, firebaseAuth } from '../../firebaseConfig';
-
+import Collapsible from 'react-native-collapsible';
+import LottieView from 'lottie-react-native';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -129,7 +130,12 @@ const handleFlag = async (report) => {
       
       {loading ? (
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#3B82F6" />
+          <LottieView
+              source={require("../../assets/loading.json")}
+              autoPlay
+              loop
+              style={{ width: 50, height: 50 }}
+            />
           <Text className="text-gray-400 mt-3">Loading recent reports...</Text>
         </View>
       ) : reports.length === 0 ? (
@@ -158,13 +164,14 @@ const handleFlag = async (report) => {
               {report.category || "No description"}
             </Text>
 
-            {expandedId === report.id && (
+            <Collapsible collapsed={expandedId !== report.id}>
               <Text className="text-gray-400 mt-3 text-sm leading-5">
                 {report.fullDescription ||
                   report.description ||
                   "No detailed description available."}
               </Text>
-            )}
+            </Collapsible>
+
 
             <Text className="text-gray-500 text-sm mt-1">
               {report.location?.address || "Unknown location"}

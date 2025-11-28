@@ -8,6 +8,7 @@
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "platforms": ["android", "ios"],
     "ios": {
       "supportsTablet": true
     },

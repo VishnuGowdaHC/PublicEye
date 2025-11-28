@@ -6,6 +6,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import LottieView from "lottie-react-native";
 
 export default function ProfileScreen() {
   const auth = getAuth();
@@ -40,7 +41,12 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <View className="flex-1 bg-slate-900 justify-center items-center">
-        <ActivityIndicator size="large" color="#3B82F6" />
+        <LottieView
+                source={require("../../assets/loading.json")}
+                autoPlay
+                loop
+                style={{ width: 50, height: 50 }}
+              />
         <Text className="text-gray-400 mt-3">Loading profile...</Text>
       </View>
     );

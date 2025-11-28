@@ -19,7 +19,7 @@ import { getDoc, doc } from "firebase/firestore";
 import { firebaseAuth, db } from "../firebaseConfig"; // Add your path
 import { onSnapshot } from "firebase/firestore";
 import  LoadingScreen  from "../tools/components/LoadingScreen"
-
+import LottieView from "lottie-react-native";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -107,13 +107,13 @@ function AppNavigator() {
     return () => unsubscribe();
   }, [user]);
 
-  // 2-second post-login delay
+  // NEW: 2-second post-login delay
   useEffect(() => {
     if (user) {
       setPostLoginDelay(true);
       const timer = setTimeout(() => {
         setPostLoginDelay(false);
-      }, 2000); // 2 seconds
+      }, 3000); // 3 seconds
 
       return () => clearTimeout(timer);
     } else {
@@ -130,7 +130,12 @@ function AppNavigator() {
   if (loading) {
     return (
       <View className="flex-1 justify-center items-center bg-slate-900">
-        <ActivityIndicator size="large" color="#3B82F6" />
+        <LottieView
+          source={require("../assets/loading.json")}
+          autoPlay
+          loop
+          style={{ width: 50, height: 50 }}
+        />
       </View>
     );
   }

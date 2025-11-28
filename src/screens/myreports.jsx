@@ -7,8 +7,8 @@ import { getAuth } from "firebase/auth";
 import { db, firebaseAuth } from "../../firebaseConfig";
 import { onSnapshot, doc, updateDoc } from "firebase/firestore";
 import { Picker } from "@react-native-picker/picker";
-
-
+import Collapsible from "react-native-collapsible";
+import LottieView from "lottie-react-native";
 
 export default function MyReportsScreen({ navigation }) {
   const [reports, setReports] = useState([]);
@@ -82,7 +82,12 @@ const toggleExpand = (id) => {
       {/* Loading */}
       {loading ? (
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#3B82F6" />
+          <LottieView
+            source={require("../../assets/loading.json")}
+            autoPlay
+            loop
+            style={{ width: 50, height: 50 }}
+          />
           <Text className="text-gray-400 mt-3">Fetching your reports...</Text>
         </View>
       ) : reports.length === 0 ? (
@@ -141,52 +146,53 @@ const toggleExpand = (id) => {
                 </Text>
               </View>
 
-              {/* Expanded Section */}
-              {expandedId === report.id && (
-                <View className="mt-3">
-                  
-                  {/* Status Dropdown */}
-                  <View className="flex-row items-center mb-3">
-                    <Text className="text-gray-300 mr-2">Update Status:</Text>
-                    <View className="flex-1 bg-gray-700 rounded-lg px-1 py-0">
-                      <Picker
-                        selectedValue={report.newStatus || report.status}
-                        onValueChange={(value) => {
-                          const updatedReports = reports.map((r) =>
-                            r.id === report.id ? { ...r, newStatus: value } : r
-                          );
-                          setReports(updatedReports);
-                        }}
-                        style={{ color: "#fff" }}
-                      >
-                        <Picker.Item label="Pending" value="pending" />
-                        <Picker.Item label="In Progress" value="in progress" />
-                        <Picker.Item label="Resolved" value="resolved" />
-                        <Picker.Item label="Reviewed" value="reviewed" />
-                      </Picker>
+                {/* Expanded Section */}
+                <Collapsible collapsed={expandedId !== report.id} duration={300}>
+                  <View className="mt-3">
+                    
+                    {/* Status Dropdown */}
+                    <View className="flex-row items-center mb-3">
+                      <Text className="text-gray-300 mr-2">Update Status:</Text>
+                      <View className="flex-1 bg-gray-700 rounded-lg px-1 py-0">
+                        <Picker
+                          selectedValue={report.newStatus || report.status}
+                          onValueChange={(value) => {
+                            const updatedReports = reports.map((r) =>
+                              r.id === report.id ? { ...r, newStatus: value } : r
+                            );
+                            setReports(updatedReports);
+                          }}
+                          style={{ color: "#fff" }}
+                        >
+                          <Picker.Item label="Pending" value="pending" />
+                          <Picker.Item label="In Progress" value="in progress" />
+                          <Picker.Item label="Resolved" value="resolved" />
+                          <Picker.Item label="Reviewed" value="reviewed" />
+                        </Picker>
+                      </View>
                     </View>
-                  </View>
 
-                  {/* Save Button */}
-                  <Pressable
-                    onPress={async () => {
-                      try {
-                        const reportRef = doc(db, "reports", report.id);
-                        await updateDoc(reportRef, {
-                          status: report.newStatus || report.status,
-                        });
-                        alert("Status updated successfully!");
-                      } catch (err) {
-                        console.error("Error updating status:", err);
-                        alert("Error updating status. Please try again.");
-                      }
-                    }}
-                    className="bg-blue-600 rounded-lg py-2 mt-2"
-                    >
-                      <Text className="text-white text-center font-semibold">Save</Text>
-                    </Pressable>
+                    {/* Save Button */}
+                    <Pressable
+                      onPress={async () => {
+                        try {
+                          const reportRef = doc(db, "reports", report.id);
+                          await updateDoc(reportRef, {
+                            status: report.newStatus || report.status,
+                          });
+                          alert("Status updated successfully!");
+                        } catch (err) {
+                          console.error("Error updating status:", err);
+                          alert("Error updating status. Please try again.");
+                        }
+                      }}
+                      className="bg-blue-600 rounded-lg py-2 mt-2"
+                      >
+                        <Text className="text-white text-center font-semibold">Save</Text>
+                      </Pressable>
                   </View>
-                )}
+                </Collapsible>
+
               </View>
             </Pressable>
           ))}

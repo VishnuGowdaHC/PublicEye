@@ -1,6 +1,13 @@
-import { Feather } from '@expo/vector-icons';
+import { Feather, AntDesign } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import React, { useState } from 'react';
@@ -16,6 +23,97 @@ import {
 } from 'react-native';
 import { db, firebaseAuth, storage } from '../../firebaseConfig';
 import LottieView from "lottie-react-native";
+import Color from 'color';
+
+// Animation config
+const TimingConfig = {
+  duration: 150,
+};
+
+const ACTIVE_COLOR = '#2563EB'; // blue-600
+const INACTIVE_COLOR = '#64748b'; // gray-500
+
+// Animated Category Button Component
+const CategoryButton = ({ item, selected, onPress }) => {
+  const fadedActiveColor = Color(ACTIVE_COLOR).alpha(0.1).toString();
+  
+  const rContainerStyle = useAnimatedStyle(() => {
+    return {
+      backgroundColor: withTiming(
+        selected ? fadedActiveColor : '#1E293B',
+        TimingConfig,
+      ),
+      borderColor: withTiming(
+        selected ? ACTIVE_COLOR : '#334155',
+        TimingConfig,
+      ),
+    };
+  }, [selected]);
+
+  const rTextStyle = useAnimatedStyle(() => {
+    return {
+      color: withTiming(
+        selected ? ACTIVE_COLOR : INACTIVE_COLOR,
+        TimingConfig,
+      ),
+    };
+  }, [selected]);
+
+  return (
+    <Animated.View
+      layout={LinearTransition.springify().mass(0.8)}
+      style={[
+        {
+          marginRight: 10,
+          marginBottom: 10,
+          borderWidth: 1,
+          borderRadius: 24,
+          paddingVertical: 12,
+          paddingHorizontal: 20,
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'row',
+        },
+        rContainerStyle,
+      ]}
+    >
+      <TouchableOpacity
+        onPress={onPress}
+        style={{ 
+          flexDirection: 'row', 
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        activeOpacity={0.7}
+      >
+        <Animated.Text
+          style={[
+            {
+              fontWeight: '600',
+              fontSize: 15,
+            },
+            rTextStyle,
+          ]}
+        >
+          {item}
+        </Animated.Text>
+        {selected && (
+          <Animated.View
+            entering={FadeIn.duration(350)}
+            exiting={FadeOut}
+            style={{
+              marginLeft: 8,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Feather name="check-circle" size={18} color={ACTIVE_COLOR} />
+          </Animated.View>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
 
 export default function ReportForm({ navigation, route }) {
   const [imageUri, setImageUri] = useState(null);
@@ -26,7 +124,7 @@ export default function ReportForm({ navigation, route }) {
   const [loading, setLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
 
-  const userId = firebaseAuth.currentUser?.uid; // Get from auth/params
+  const userId = firebaseAuth.currentUser?.uid;
 
   const categories = [
     'Pothole',
@@ -36,12 +134,10 @@ export default function ReportForm({ navigation, route }) {
     'Sewage Issue',
     'Other',
   ];
+
   const handleCategorySelect = (cat) => {
     setCategory(cat);
-  }
-
-    
-
+  };
 
   // Pick image from gallery
   const pickImage = async () => {
@@ -81,7 +177,6 @@ export default function ReportForm({ navigation, route }) {
 
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);
-      console.log(result);
     }
   };
 
@@ -103,7 +198,6 @@ export default function ReportForm({ navigation, route }) {
 
       const { latitude, longitude } = currentLocation.coords;
 
-      // Reverse geocode to get address + area
       const reverseGeocode = await Location.reverseGeocodeAsync({
         latitude,
         longitude,
@@ -114,16 +208,14 @@ export default function ReportForm({ navigation, route }) {
         const fullAddress = `${loc.street || ''}, ${loc.city || ''}, ${loc.region || ''}, ${loc.country || ''}`.replace(/^,\s*/, '');
         const areaName = loc.subLocality || loc.district || loc.city || 'Unknown Area';
 
-        // Save both address and area
         setAddress(fullAddress);
         setLocation({
           lat: latitude,
           lng: longitude,
           address: fullAddress,
-          area: areaName, // 🆕 Added field
+          area: areaName,
         });
       } else {
-        // fallback if reverse geocode fails
         setLocation({
           lat: latitude,
           lng: longitude,
@@ -185,14 +277,12 @@ export default function ReportForm({ navigation, route }) {
     setLoading(true);
 
     try {
-      // 1️⃣ Upload image
       const imageRef = ref(storage, `reports/${userId}/${Date.now()}.jpg`);
       const response = await fetch(imageUri);
       const blob = await response.blob();
       await uploadBytes(imageRef, blob);
       const photoUrl = await getDownloadURL(imageRef);
 
-      // 2️⃣ Add to Firestore
       await addDoc(collection(db, "reports"), {
         userId,
         category,
@@ -202,7 +292,7 @@ export default function ReportForm({ navigation, route }) {
           lat: location.lat,
           lng: location.lng,
           address: location.address || 'Location added',
-          area: location.area || 'Unknown Area', // 🆕 Included here
+          area: location.area || 'Unknown Area',
         },
         status: "pending",
         createdAt: serverTimestamp(),
@@ -215,6 +305,7 @@ export default function ReportForm({ navigation, route }) {
           onPress: () => {
             setImageUri(null);
             setDescription('');
+            setCategory('');
             setLocation(null);
             setAddress('');
             navigation?.goBack();
@@ -230,7 +321,7 @@ export default function ReportForm({ navigation, route }) {
   };
 
   return (
-    <View className="flex-1 bg-slate-900 ">
+    <View className="flex-1 bg-slate-900">
       {/* Header */}
       <View className="flex-row items-center px-4 pt-12 pb-6">
         <TouchableOpacity onPress={() => {
@@ -247,12 +338,12 @@ export default function ReportForm({ navigation, route }) {
         </Text>
       </View>
 
-      <ScrollView className=" px-6"
+      <ScrollView className="px-6"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 60 }}>
         {/* Image Upload Section */}
         <View className="mb-6 mt-2">
-          <Text className="text-gray-400 text-sm mb-3">Report Photo </Text>
+          <Text className="text-gray-400 text-sm mb-3">Report Photo</Text>
           <TouchableOpacity
             onPress={showImageOptions}
             className="bg-slate-800 rounded-xl border-2 border-dashed border-slate-700 overflow-hidden"
@@ -260,7 +351,6 @@ export default function ReportForm({ navigation, route }) {
           >
             {imageUri ? (
               <View className="relative w-full" style={{ aspectRatio: 4 / 3 }}>
-               
                 <Image
                   source={{ uri: imageUri }}
                   style={{
@@ -271,7 +361,6 @@ export default function ReportForm({ navigation, route }) {
                   }}
                   resizeMode="cover"
                 />
-
                 <TouchableOpacity
                   onPress={() => setImageUri(null)}
                   className="absolute top-3 right-3 border-slate-700 w-10 h-10 rounded-full items-center justify-center"
@@ -290,49 +379,28 @@ export default function ReportForm({ navigation, route }) {
           </TouchableOpacity>
         </View>
         
-        {/* CATEGORY SELECTOR */}
-        <View className="mb-6 ">
-          <Text className="text-gray-400 text-sm mb-3">Category </Text>
+        {/* ANIMATED CATEGORY SELECTOR */}
+        <View className="mb-6">
+          <Text className="text-gray-400 text-sm mb-3">Category</Text>
           <View style={{
             flexDirection: "row",
             flexWrap: "wrap",
-            justifyContent: "space-between",
-            }}
-        >
+            alignItems: "center",
+          }}>
             {categories.map((item) => (
-              <TouchableOpacity
+              <CategoryButton
                 key={item}
+                item={item}
+                selected={category === item}
                 onPress={() => handleCategorySelect(item)}
-                  style={{
-                    width: "31%", 
-                    marginBottom: 10,
-                    borderWidth: 1,
-                    borderRadius: 8,
-                    paddingVertical: 10,
-                    paddingHorizontal: 5,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor:
-                        category === item ? "#2563EB" : "#1E293B", // blue-600 or slate-800
-                    borderColor:
-                        category === item ? "#2563EB" : "#334155", // blue-600 or slate-700
-                }}
-              >
-                <Text
-                  className={`${
-                    category === item ? "text-white" : "text-gray-400"
-                  } text-center font-medium`}
-                >
-                  {item}
-                </Text>
-              </TouchableOpacity>
+              />
             ))}
           </View>
         </View>
 
         {/* Description Input */}
         <View className="mb-6">
-          <Text className="text-gray-400 text-sm mb-3">Description </Text>
+          <Text className="text-gray-400 text-sm mb-3">Description</Text>
           <TextInput
             value={description}
             onChangeText={setDescription}
@@ -360,16 +428,16 @@ export default function ReportForm({ navigation, route }) {
                   </Text>
                   {address ? (
                     <>
-                    <Text className="text-gray-400 text-sm">
-                      {address + " "}
-                    </Text>
-                    <Text className="text-gray-400 text-sm">
-                        Lat: {location.lat.toFixed(6)}, Lng: {location.lng.toFixed(6)} 
-                    </Text>
+                      <Text className="text-gray-400 text-sm">
+                        {address}
+                      </Text>
+                      <Text className="text-gray-400 text-sm">
+                        Lat: {location.lat.toFixed(6)}, Lng: {location.lng.toFixed(6)}
+                      </Text>
                     </>
                   ) : (
                     <Text className="text-gray-400 text-sm">
-                      
+                      Location coordinates added
                     </Text>
                   )}
                 </View>
@@ -379,7 +447,7 @@ export default function ReportForm({ navigation, route }) {
                 disabled={locationLoading}
                 className="bg-slate-700 py-3 rounded-lg"
               >
-                <Text className="text-gray-400 drop-shadow text-center text-sm font-medium px-4 py-2 ">
+                <Text className="text-gray-400 text-center text-sm font-medium px-4 py-2">
                   Update Location
                 </Text>
               </TouchableOpacity>
@@ -393,12 +461,12 @@ export default function ReportForm({ navigation, route }) {
             >
               <View className="flex flex-row items-center justify-center">
                 {locationLoading ? (
-                  <View className="items-center justify-center object-cover ">
+                  <View className="items-center justify-center">
                     <LottieView
-                            source={require("../../assets/loading.json")}
-                            autoPlay
-                            loop
-                            style={{ width: 50, height: 50 }}
+                      source={require("../../assets/loading.json")}
+                      autoPlay
+                      loop
+                      style={{ width: 50, height: 50 }}
                     />
                   </View>
                 ) : (
@@ -422,12 +490,12 @@ export default function ReportForm({ navigation, route }) {
           activeOpacity={0.8}
         >
           {loading ? (
-            <View className="items-center justify-center object-cover ">
+            <View className="items-center justify-center">
               <LottieView
-                      source={require("../../assets/loading.json")}
-                      autoPlay
-                      loop
-                      style={{ width: 50, height: 50 }}
+                source={require("../../assets/loading.json")}
+                autoPlay
+                loop
+                style={{ width: 50, height: 50 }}
               />
             </View>
           ) : (
