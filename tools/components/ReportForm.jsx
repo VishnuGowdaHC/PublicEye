@@ -12,7 +12,6 @@ import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Image,
   ScrollView,

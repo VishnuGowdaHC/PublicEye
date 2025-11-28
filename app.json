@@ -3,12 +3,14 @@
     "name": "publiceye",
     "slug": "publiceye",
     "version": "1.0.0",
-    "entryPoint": "./index.js",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "platforms": ["android", "ios"],
+    "platforms": [
+      "android",
+      "ios"
+    ],
     "ios": {
       "supportsTablet": true
     },
@@ -58,7 +60,8 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow app to use your location"
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {
